@@ -31,8 +31,6 @@ def main(argv):
     )
 
     train_dataset = V90kList("../data/train/", transform=train_transform)
-    for i in range(10):
-        print(train_dataset[i])
 
 if __name__ == "__main__":
     main(sys.argv[1:])
