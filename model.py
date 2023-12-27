@@ -1,4 +1,4 @@
-import torch 
+import torch
 
 from compressai.models import MeanScaleHyperprior
 
@@ -9,6 +9,7 @@ model.g_a.load_state_dict(torch.load(f"./model/mbt2018_mean/quality_1/g_a"))
 
 print(model.g_a.state_dict())
 """
+
 
 class MeanScaleHalfHyperprior(MeanScaleHyperprior):
     def __init__(self, N, M, **kwargs):
@@ -21,23 +22,46 @@ class MeanScaleHalfHyperprior(MeanScaleHyperprior):
         self.M = M
 
     def forward(self, x):
-        # print(x.shape)
-        
-        # y = self.g_a(x)
-        # z = self.h_a(y)
-        # z_hat, z_likelihoods = self.entropy_bottleneck(z)
-        # gaussian_params = self.h_s(z_hat)
-        # scales_hat, means_hat = gaussian_params.chunk(2, 1)
+        y = self.g_a(x)
+        z = self.h_a(y)
+        z_hat, z_likelihoods = self.entropy_bottleneck(z)
 
+        gaussian_params = self.h_s(z_hat)
+        scales_hat, means_hat = gaussian_params.chunk(2, 1)
+
+        y_0, _ = self.spatial_split(y)
+        scales_hat_0, scales_hat_1 = self.spatial_split(scales_hat)
+        means_hat_0, means_hat_1 = self.spatial_split(means_hat)
+
+        y_0_hat, y_0_likelihood = self.gaussian_conditional(
+            y_0,
+            scales_hat_0,
+            means=means_hat_0,
+        )
+
+        return {
+            z_hat,
+        }
         ## AE mean parameters
-        #  split means_hat and scales_hat for 
+        #  split means_hat and scales_hat for
         #  encoding and decoding feature map
 
-
         ## Directly predictive parameters
-        #  combine the decoded feature map and the predictive 
+        #  combine the decoded feature map and the predictive
         #  feature map, and push it into the context model for
         #  constructing whole feature map.
+
+    def spatial_split(self, y):
+        dtype = y.dtype
+        device = y.device
+        _, _, H, W = y.size()
+        mask_0, mask_1 = self.get_mask(H, W, dtype, device)
+
+        y_0, y_1 = y.chunk(2, 1)
+        y_0_0, y_1_0 = y_0 * mask_0, y_1 * mask_0
+        y_0_1, y_1_1 = y_0 * mask_1, y_1 * mask_1
+
+        return y_0_0 + y_1_1, y_0_1 + y_1_0
 
     @staticmethod
     def get_mask(height, width, dtype, device):
@@ -47,18 +71,18 @@ class MeanScaleHalfHyperprior(MeanScaleHyperprior):
         mask_col = micro_row.repeat(width // 2)
         mask_0 = micro_mask.repeat(height // 2, width // 2)
 
-        
         # make the mask for odd num of rows or cols
         if height % 2 == 1 and width % 2 == 1:
-            mask_col = torch.cat((mask_col, torch.tensor([1], dtype=dtype, device=device)), dim=0)
+            mask_col = torch.cat(
+                (mask_col, torch.tensor([1], dtype=dtype, device=device)), dim=0
+            )
 
         if width % 2 == 1:
             mask_0 = torch.cat((mask_0, torch.unsqueeze(mask_row, 1)), dim=1)
-            
+
         if height % 2 == 1:
             mask_0 = torch.cat((mask_0, torch.unsqueeze(mask_col, 0)), dim=0)
-            
-        
+
         mask_0 = torch.unsqueeze(mask_0, 0)
         mask_0 = torch.unsqueeze(mask_0, 0)
         mask_1 = torch.ones_like(mask_0) - mask_0
@@ -104,4 +128,3 @@ class MeanScaleHalfHyperprior(MeanScaleHyperprior):
     ]]]
     
     """
-
