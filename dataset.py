@@ -9,7 +9,7 @@ class V90kList(Dataset):
 
         self.data_dir = data_dir
         self.transform = transform
-        self.sample = self.samples[:cnt]
+        self.samples = self.samples[:cnt]
 
     def __getitem__(self, index):
         img = Image.open(self.data_dir + self.samples[index]).convert("RGB")
