@@ -54,7 +54,18 @@ def parse_args(argv: list[str]):
         "--data_dir",
         type=str,
         default="./data/",
-        help="Training Data Directory (default: %(default)s)",
+        help="Data Directory (default: %(default)s)",
+    )
+
+    parser.add_argument(
+        "--pretrain_dir",
+        type=str,
+        default="./models/mbt2018_mean/",
+        help="Pretrain Model Directory (default: %(default)s)",
+    )
+
+    parser.add_argument(
+        "--quality", type=int, default=3, help="Model Quality (default %(default)s)"
     )
 
     return parser.parse_args(argv)
@@ -105,7 +116,7 @@ def main(argv):
     )
 
     model = MeanScaleHalfHyperprior(128, 192)
-    model.load_pretrain()
+    model.load_pretrain(model_path=args.pretrain_dir, quality=args.quality)
 
     for _, d in enumerate(train_dataloader):
         x_hat, y_0_likelihoods, z_likelihoods = model(d)
