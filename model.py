@@ -4,14 +4,6 @@ from torch import nn
 from compressai.models import MeanScaleHyperprior
 from compressai.models.utils import conv
 
-"""
-model = MeanScaleHyperprior(128, 192)
-
-model.g_a.load_state_dict(torch.load(f"./model/mbt2018_mean/quality_1/g_a"))
-
-print(model.g_a.state_dict())
-"""
-
 
 class MeanScaleHalfHyperprior(MeanScaleHyperprior):
     def __init__(self, N, M, **kwargs):
@@ -155,3 +147,13 @@ class MeanScaleHalfHyperprior(MeanScaleHyperprior):
     ]]]
     
     """
+
+    def load_encoder(self, encoder_path="./models/mbt2018_mean/quality_1/g_a"):
+        self.g_a.load_state_dict(torch.load(encoder_path))
+
+    def load_decoder(self, encoder_path="./models/mbt2018_mean/quality_1/g_s"):
+        self.g_s.load_state_dict(torch.load(encoder_path))
+
+    def load_pretrain(self, model_path="./models/mbt2018_mean/", quality=1):
+        self.load_encoder(model_path + f"quality_{quality}/" + "g_a")
+        self.load_decoder(model_path + f"quality_{quality}/" + "g_s")

@@ -105,6 +105,7 @@ def main(argv):
     )
 
     model = MeanScaleHalfHyperprior(128, 192)
+    model.load_pretrain()
 
     for _, d in enumerate(train_dataloader):
         x_hat, y_0_likelihoods, z_likelihoods = model(d)
