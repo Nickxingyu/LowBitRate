@@ -50,6 +50,13 @@ def parse_args(argv: list[str]):
         help="Train data cnt (default: %(default)s)",
     )
 
+    parser.add_argument(
+        "--data_dir",
+        type=str,
+        default="./data/",
+        help="Training Data Directory (default: %(default)s)",
+    )
+
     return parser.parse_args(argv)
 
 
@@ -71,13 +78,13 @@ def main(argv):
     )
 
     train_dataset = V90kList(
-        "./data/train/",
+        args.data_dir,
         transform=train_transform,
         cnt=args.train_data_cnt,
     )
 
     test_dataset = ImageFolder(
-        "./data/",
+        args.data_dir,
         transform=test_transform,
         split="test",
     )
@@ -105,6 +112,7 @@ def main(argv):
 
     for _, d in enumerate(test_dataloader):
         x_hat, y_0_likelihoods, z_likelihoods = model(d)
+        break
 
 
 if __name__ == "__main__":
