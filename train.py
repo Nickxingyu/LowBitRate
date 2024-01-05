@@ -8,6 +8,8 @@ from torch.utils.data import DataLoader
 from dataset import V90kList
 from model import MeanScaleHalfHyperprior
 
+from compressai.datasets import ImageFolder
+
 
 def parse_args(argv: list[str]):
     parser = argparse.ArgumentParser()
@@ -62,10 +64,22 @@ def main(argv):
         ]
     )
 
+    test_transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+        ]
+    )
+
     train_dataset = V90kList(
         "./data/train/",
         transform=train_transform,
         cnt=args.train_data_cnt,
+    )
+
+    test_dataset = ImageFolder(
+        "./data/",
+        transform=test_transform,
+        split="test",
     )
 
     train_dataloader = DataLoader(
@@ -76,10 +90,21 @@ def main(argv):
         pin_memory=(device == "cuda"),
     )
 
+    test_dataloader = DataLoader(
+        test_dataset,
+        num_workers=args.num_workers,
+        shuffle=False,
+        pin_memory=(device == "cuda"),
+    )
+
     model = MeanScaleHalfHyperprior(128, 192)
 
     for _, d in enumerate(train_dataloader):
-        output = model(d)
+        x_hat, y_0_likelihoods, z_likelihoods = model(d)
+        break
+
+    for _, d in enumerate(test_dataloader):
+        x_hat, y_0_likelihoods, z_likelihoods = model(d)
 
 
 if __name__ == "__main__":
